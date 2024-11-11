@@ -1,98 +1,169 @@
-import  vertexShaderSource  from './shaders/vshaders.glsl?raw';
-import fragmentShaderSource  from './shaders/fshader.glsl?raw';
+import vertexShaderSource from "./shaders/vshader.glsl?raw";
+import fragmentShaderSource from "./shaders/fshader.glsl?raw";
 
-class Renderer
-{
+class Renderer {
     private canvas: HTMLCanvasElement;
-    private g1: WebGL2RenderingContext;
+    private gl: WebGL2RenderingContext;
+    private texture: WebGLTexture;
+
     private program: WebGLProgram;
 
     constructor() {
-        this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-        this.g1 = this.canvas.getContext('webgl2')!;
+        this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
+        this.gl = this.canvas.getContext("webgl2")!;
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
 
-        const vertexShader = this.createShader(this.g1.VERTEX_SHADER, vertexShaderSource);
-        const fragmentShader = this.createShader(this.g1.FRAGMENT_SHADER, fragmentShaderSource);
+        const vertexShader = this.createShader(this.gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = this.createShader(this.gl.FRAGMENT_SHADER, fragmentShaderSource);
 
         this.program = this.createProgram(vertexShader, fragmentShader);
-        this.g1.useProgram(this.program);
 
-        this.createBuffer([
-            -0.5,-0.5,
-            -0.5,0.5,
-            0.5,-0.5,
-        ]);
-        this.g1.vertexAttribPointer(0, 2, this.g1.FLOAT, false, 0, 0);
-        this.g1.enableVertexAttribArray(0);
+        this.texture = this.loadTexture("assets/texture-mapping-test-image.jpg");
 
-        this.createBuffer([
-            1,0,0,
-            0,1,0,
-            0,0,1,
+        this.gl.useProgram(this.program);
+
+        const positionBuffer = this.createArrayBuffer([
+            -0.5, -0.5, // left bottom
+            -0.5, 0.5, // left top
+            0.5, -0.5, // right bottom
+            -0.5, 0.5, // left top
+            0.5, 0.5, // right top
+            0.5, -0.5 // right bottom
         ]);
 
-        this.g1.vertexAttribPointer(1, 3, this.g1.FLOAT, false, 0, 0);
-        this.g1.enableVertexAttribArray(1);
+        this.gl.vertexAttribPointer(0, 2, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(0);
+
+        const texCoords = [
+            0, 0, // left bottom
+            0, 1, // left top
+            1, 0, // right bottom
+            0, 1, // left top
+            1, 1, // right top
+            1, 0 // right bottom
+        ]
+        const texBuffer = this.createArrayBuffer(texCoords);
+        this.gl.vertexAttribPointer(1, 2, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(1);
+
+        const colorBuffer = this.createArrayBuffer([
+            1, 1, 1,
+            1, 1, 1,
+            1, 1, 1,
+            1, 1, 1,
+            1, 1, 1,
+            1, 1, 1,
+        ]);
+
+        this.gl.vertexAttribPointer(2, 3, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(2);
     }
-    /**
-     * create a webgl program
-     * @param vertexShader  - vertex shader
-     * @param fragmentShader - fragment shader
-     * @returns 
-     */
-    private createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram 
-    {
 
-        const program = this.g1.createProgram()!;
-        this.g1.attachShader(program, vertexShader);
-        this.g1.attachShader(program, fragmentShader);
-        this.g1.linkProgram(program);
 
-        const success = this.g1.getProgramParameter(program, this.g1.LINK_STATUS);
-        if (!success) {
-            console.error(`programe fail to link: ${this.g1.getProgramInfoLog(program)}`);
-            this.g1.deleteProgram(program);
+
+    private loadTexture(uri: string): WebGLTexture {
+        const texture = this.gl.createTexture()!;
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+
+        this.gl.texImage2D(this.gl.TEXTURE_2D,
+            0,
+            this.gl.RGBA,
+            1, // width
+            1, // height
+            0, // border
+            this.gl.RGBA,
+            this.gl.UNSIGNED_BYTE,
+            new Uint8Array([255, 0, 255 , 255]));
+
+        const image = new Image();
+        image.onload = () => {
+            this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+            this.gl.texImage2D(this.gl.TEXTURE_2D,
+                0,
+                this.gl.RGBA,
+                this.gl.RGBA,
+                this.gl.UNSIGNED_BYTE,
+                image);
+            this.gl.generateMipmap(this.gl.TEXTURE_2D);
+
         }
+        image.src = uri;
+
+        return texture;
+
+    }
+
+
+    /**
+     * Create a WebGL program from given vertex and fragment shader.
+     * @param vertexShader vertex shader
+     * @param fragmentShader fragment shader 
+     * @returns the created program
+     */
+    private createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
+        const program = this.gl.createProgram()!;
+        this.gl.attachShader(program, vertexShader);
+        this.gl.attachShader(program, fragmentShader);
+
+        this.gl.linkProgram(program);
+
+        const linked = this.gl.getProgramParameter(program, this.gl.LINK_STATUS);
+        if (!linked) {
+            const programError = this.gl.getProgramInfoLog(program);
+            console.warn("Program linking failed: " + programError);
+        }
+
         return program;
     }
-    /**
-     * create a shader
-     * @param type - gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
-     * @param source - shader source code as string
-     * @returns {WebGLShader}
-     */
-    private createShader(type: number, source: string): WebGLShader 
-    {
-        const shader = this.g1.createShader(type)!;
-        this.g1.shaderSource(shader, source);
-        this.g1.compileShader(shader);
 
-        const success = this.g1.getShaderParameter(shader, this.g1.COMPILE_STATUS);
-        if (!success) {
-            console.error(`shader fail to compile: ${this.g1.getShaderInfoLog(shader)}`);
-            this.g1.deleteShader(shader);
+    /**
+     * Creates a shader for given type and source.
+     * @param type WebGL shader type
+     * @param source shader source code
+     * @returns the created shader 
+     */
+    private createShader(type: number, source: string): WebGLShader {
+        const shader = this.gl.createShader(type)!;
+
+        this.gl.shaderSource(shader, source);
+        this.gl.compileShader(shader);
+
+        const compiled = this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS);
+        if (!compiled) {
+            const shaderError = this.gl.getShaderInfoLog(shader);
+            console.warn("Shader compilation failed: " + shaderError);
         }
+
         return shader;
     }
+
     /**
-     * create a buffer to store data
-     * @param data - data to be stored in the buffer
-     * @returns {WebGLBuffer}
+     * Creates a WebGL buffer from given data.
+     * @param data the data to be stored in the buffer
+     * @returns the created buffer
      */
-    private createBuffer(data: number[]): WebGLBuffer{
-        const buffer = this.g1.createBuffer()!;
-        this.g1.bindBuffer(this.g1.ARRAY_BUFFER, buffer);
-        this.g1.bufferData(this.g1.ARRAY_BUFFER, new Float32Array(data), this.g1.STATIC_DRAW);
+    private createArrayBuffer(data: number[]): WebGLBuffer {
+        const buffer = this.gl.createBuffer()!;
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(data), this.gl.STATIC_DRAW);
+
         return buffer;
     }
-    public draw():void 
-    {
-        this.g1.clearColor(0.8, 0.8, 0.8, 1.0);
-        this.g1.clear(this.g1.COLOR_BUFFER_BIT);
 
-        this.g1.drawArrays(this.g1.TRIANGLES, 0, 3);
 
+
+    public draw(): void {
+        this.gl.clearColor(0.8, 0.8, 0.8, 1);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+
+        // start game loop 
+        window.requestAnimationFrame(() => this.draw());
     }
+
 }
+
 const renderer = new Renderer();
+
 renderer.draw();

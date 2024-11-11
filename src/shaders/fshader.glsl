@@ -1,13 +1,14 @@
-#version 300 es
-
+#version 300 es 
 precision mediump float;
 
+in vec2 vTexCoords;
+in vec3 vColor;
 
-in vec3 v_color;
+uniform sampler2D uTexture;
 
 out vec4 fragColor;
 
-void main() 
+void main()
 {
-    fragColor = vec4(v_color, 1.0);
+    fragColor = texture(uTexture, vTexCoords) * vec4(vColor, 1.0);
 }
