@@ -22,34 +22,24 @@ class Renderer {
 
         this.gl.useProgram(this.program);
 
-        const positionBuffer = this.createArrayBuffer(new Float32Array([
-            -0.5, -0.5, // left bottom
-            -0.5, 0.5, // left top
-            0.5, -0.5, // right bottom
-            0.5, 0.5, // right top
+        const buffer = this.createArrayBuffer(new Float32Array([
+            
+           // x    y     s  t  r  g  b 
+            -0.5, -0.5,  0, 0, 1, 1, 1,     // left bottom
+            -0.5, 0.5,   0, 1, 1, 1, 1,     // left top
+            0.5, -0.5,   1, 0, 1, 1, 1,     // right bottom
+            0.5, 0.5,    1, 1, 1, 1, 1,     // right top
         ]));
 
-        this.gl.vertexAttribPointer(0, 2, this.gl.FLOAT, false, 0, 0);
+        const stride = 2 * Float32Array.BYTES_PER_ELEMENT + 2 * Float32Array.BYTES_PER_ELEMENT + 3 * Float32Array.BYTES_PER_ELEMENT;
+
+        this.gl.vertexAttribPointer(0, 2, this.gl.FLOAT, false, stride, 0);
         this.gl.enableVertexAttribArray(0);
 
-        const texCoords = [
-            0, 0, // left bottom
-            0, 1, // left top
-            1, 0, // right bottom
-            1, 1, // right top
-        ]
-        const texBuffer = this.createArrayBuffer(new Float32Array(texCoords));
-        this.gl.vertexAttribPointer(1, 2, this.gl.FLOAT, false, 0, 0);
+        this.gl.vertexAttribPointer(1, 2, this.gl.FLOAT, false, stride, 2 * Float32Array.BYTES_PER_ELEMENT);
         this.gl.enableVertexAttribArray(1);
 
-        const colorBuffer = this.createArrayBuffer(new Float32Array([
-            1, 1, 1,
-            1, 1, 1,
-            1, 1, 1,
-            1, 1, 1,
-        ]));
-
-        this.gl.vertexAttribPointer(2, 3, this.gl.FLOAT, false, 0, 0);
+        this.gl.vertexAttribPointer(2, 3, this.gl.FLOAT, false,  stride, 4 * Float32Array.BYTES_PER_ELEMENT);
         this.gl.enableVertexAttribArray(2);
 
         const indexBuffer = this.createIndexBuffer(new Uint8Array([
@@ -160,6 +150,7 @@ class Renderer {
     }
 
     public draw(): void {
+        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         this.gl.clearColor(0.8, 0.8, 0.8, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
