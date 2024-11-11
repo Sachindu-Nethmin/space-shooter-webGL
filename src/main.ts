@@ -22,14 +22,12 @@ class Renderer {
 
         this.gl.useProgram(this.program);
 
-        const positionBuffer = this.createArrayBuffer([
+        const positionBuffer = this.createArrayBuffer(new Float32Array([
             -0.5, -0.5, // left bottom
             -0.5, 0.5, // left top
             0.5, -0.5, // right bottom
-            -0.5, 0.5, // left top
             0.5, 0.5, // right top
-            0.5, -0.5 // right bottom
-        ]);
+        ]));
 
         this.gl.vertexAttribPointer(0, 2, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(0);
@@ -38,25 +36,27 @@ class Renderer {
             0, 0, // left bottom
             0, 1, // left top
             1, 0, // right bottom
-            0, 1, // left top
             1, 1, // right top
-            1, 0 // right bottom
         ]
-        const texBuffer = this.createArrayBuffer(texCoords);
+        const texBuffer = this.createArrayBuffer(new Float32Array(texCoords));
         this.gl.vertexAttribPointer(1, 2, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(1);
 
-        const colorBuffer = this.createArrayBuffer([
+        const colorBuffer = this.createArrayBuffer(new Float32Array([
             1, 1, 1,
             1, 1, 1,
             1, 1, 1,
             1, 1, 1,
-            1, 1, 1,
-            1, 1, 1,
-        ]);
+        ]));
 
         this.gl.vertexAttribPointer(2, 3, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(2);
+
+        const indexBuffer = this.createIndexBuffer(new Uint8Array([
+            0, 1, 2,
+            2, 1, 3,
+        ]));
+
     }
 
 
@@ -142,21 +142,28 @@ class Renderer {
      * @param data the data to be stored in the buffer
      * @returns the created buffer
      */
-    private createArrayBuffer(data: number[]): WebGLBuffer {
+    private createArrayBuffer(data: Float32Array): WebGLBuffer {
         const buffer = this.gl.createBuffer()!;
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(data), this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
 
         return buffer;
     }
 
+    private createIndexBuffer(data:Uint8Array | Uint16Array | Uint32Array): WebGLBuffer {
 
+        const buffer = this.gl.createBuffer()!;
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer);
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
+
+        return buffer;
+    }
 
     public draw(): void {
         this.gl.clearColor(0.8, 0.8, 0.8, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-        this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+        this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_BYTE, 0);
 
         // start game loop 
         window.requestAnimationFrame(() => this.draw());
