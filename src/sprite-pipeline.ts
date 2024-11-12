@@ -114,6 +114,7 @@ export class SpritePipeline
           });
       
           this.textureBindGroup = device.createBindGroup({
+            label: texture.id,
             layout: textureBindGroupLayout,
             entries: [
               {
