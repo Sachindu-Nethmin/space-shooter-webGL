@@ -10,6 +10,7 @@ export class Content
     public static spriteSheet: Texture;
 
     public static sprites: { [id:string] : Sprite } = {};
+    public static backgroundTexture: Texture;
 
     public static async initialize(device: GPUDevice)
     {
@@ -18,6 +19,7 @@ export class Content
         this.uvTexture = await Texture.createTextureFromURL(device, "assets/uv_test.png");
         this.spriteSheet = await Texture.createTextureFromURL(device, 
             "assets/Spritesheet/sheet.png");
+        this.backgroundTexture = await Texture.createTextureFromURL(device, "assets/Backgrounds/purple.png");
 
         await this.loadSpriteSheet();
     }
