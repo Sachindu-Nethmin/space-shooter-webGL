@@ -4,4 +4,9 @@ export class Rect
     {
     }
 
+    public copy(): Rect 
+    {
+        return new Rect(this.x, this.y, this.width, this.height);
+    }
+
 }
