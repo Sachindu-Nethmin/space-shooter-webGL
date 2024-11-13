@@ -1,5 +1,7 @@
+import { vec2 } from "gl-matrix";
 import { BufferUtil } from "./buffer-util";
 import { Camera } from "./camera";
+import { Color } from "./color";
 import { Rect } from "./rect";
 import { SpritePipeline } from "./sprite-pipeline";
 import { Texture } from "./texture";
@@ -17,7 +19,8 @@ export class BatchDrawCall {
 
 export class SpriteRenderer {
 
-    private currentTexture!: Texture;
+    private defaultColor = new Color();
+    private currentTexture: Texture | null = null;
 
     private indexBuffer!: GPUBuffer;
     private projectionViewMatrixBuffer!: GPUBuffer;
@@ -25,6 +28,12 @@ export class SpriteRenderer {
     private camera: Camera;
 
     private passEncoder!: GPURenderPassEncoder;
+
+    private v0 = vec2.create();
+    private v1 = vec2.create();
+    private v2 = vec2.create();
+    private v3 = vec2.create();
+    private rotationOrigin = vec2.create();
 
     /**
      * Pipelines created for each texture
@@ -73,6 +82,8 @@ export class SpriteRenderer {
         this.passEncoder = passEncoder;
 
         this.batchDrawCallPerTexture = {};
+
+        this.currentTexture = null;
 
         this.camera.update();
 
@@ -148,12 +159,115 @@ export class SpriteRenderer {
 
         batchDrawCall.instanceCount++;
 
-        if (batchDrawCall.instanceCount >= MAX_NUMBER_OF_SPRITES ) {
+        if (batchDrawCall.instanceCount >= MAX_NUMBER_OF_SPRITES) {
             const newBatchDrawCall = new BatchDrawCall(this.pipelinesPerTexture[texture.id]);
             this.batchDrawCallPerTexture[texture.id].push(newBatchDrawCall);
         }
 
     }
+
+    public drawSpriteSource(texture: Texture, rect: Rect, sourceRect: Rect,
+        color: Color = this.defaultColor, rotation = 0, rotationAnchor: vec2 | null = null) {
+
+        if (this.currentTexture != texture) {
+            this.currentTexture = texture;
+
+            let pipeline = this.pipelinesPerTexture[texture.id];
+            if (!pipeline) {
+                pipeline = SpritePipeline.create(this.device, texture, this.projectionViewMatrixBuffer);
+                this.pipelinesPerTexture[texture.id] = pipeline;
+            }
+
+            let batchDrawCalls = this.batchDrawCallPerTexture[texture.id];
+            if (!batchDrawCalls) {
+                this.batchDrawCallPerTexture[texture.id] = [];
+            }
+        }
+
+        const arrayOfBatchCalls = this.batchDrawCallPerTexture[texture.id];
+        let batchDrawCall = arrayOfBatchCalls[arrayOfBatchCalls.length - 1]
+        if (!batchDrawCall) {
+            batchDrawCall = new BatchDrawCall(this.pipelinesPerTexture[texture.id]);
+            this.batchDrawCallPerTexture[texture.id].push(batchDrawCall);
+        }
+
+        let i = batchDrawCall.instanceCount * FLOATS_PER_SPRITE;
+
+        let u0 = sourceRect.x / texture.width;
+        let v0 = sourceRect.y / texture.height;
+        let u1 = (sourceRect.x + sourceRect.width) / texture.width;
+        let v1 = (sourceRect.y + sourceRect.height) / texture.height;
+
+        this.v0[0] = rect.x;
+        this.v0[1] = rect.y;
+        this.v1[0] = rect.x + rect.width;
+        this.v1[1] = rect.y;
+        this.v2[0] = rect.x + rect.width;
+        this.v2[1] = rect.y + rect.height;
+        this.v3[0] = rect.x;
+        this.v3[1] = rect.y + rect.height;
+
+        if (rotation != 0) {
+            if (rotationAnchor == null) {
+                vec2.copy(this.rotationOrigin, this.v0);
+            }
+            else {
+                this.rotationOrigin[0] = this.v0[0] + rotationAnchor[0] * rect.width;
+                this.rotationOrigin[1] = this.v0[1] + rotationAnchor[1] * rect.height;
+            }
+
+            vec2.rotate(this.v0, this.v0, this.rotationOrigin, rotation);
+            vec2.rotate(this.v1, this.v1, this.rotationOrigin, rotation);
+            vec2.rotate(this.v2, this.v2, this.rotationOrigin, rotation);
+            vec2.rotate(this.v3, this.v3, this.rotationOrigin, rotation);
+        }
+
+        // top left 
+        batchDrawCall.vertexData[0 + i] = this.v0[0];
+        batchDrawCall.vertexData[1 + i] = this.v0[1];
+        batchDrawCall.vertexData[2 + i] = u0;
+        batchDrawCall.vertexData[3 + i] = v0;
+        batchDrawCall.vertexData[4 + i] = color.r;
+        batchDrawCall.vertexData[5 + i] = color.g;
+        batchDrawCall.vertexData[6 + i] = color.b;
+
+        // top right
+        batchDrawCall.vertexData[7 + i] = this.v1[0];
+        batchDrawCall.vertexData[8 + i] = this.v1[1];
+        batchDrawCall.vertexData[9 + i] = u1;
+        batchDrawCall.vertexData[10 + i] = v0;
+        batchDrawCall.vertexData[11 + i] = color.r;
+        batchDrawCall.vertexData[12 + i] = color.g;
+        batchDrawCall.vertexData[13 + i] = color.b;
+
+        // bottom right
+        batchDrawCall.vertexData[14 + i] = this.v2[0];
+        batchDrawCall.vertexData[15 + i] = this.v2[1];
+        batchDrawCall.vertexData[16 + i] = u1;
+        batchDrawCall.vertexData[17 + i] = v1;
+        batchDrawCall.vertexData[18 + i] = color.r;
+        batchDrawCall.vertexData[19 + i] = color.g;
+        batchDrawCall.vertexData[20 + i] = color.b;
+
+        // bottom left
+        batchDrawCall.vertexData[21 + i] = this.v3[0];
+        batchDrawCall.vertexData[22 + i] = this.v3[1];
+        batchDrawCall.vertexData[23 + i] = u0;
+        batchDrawCall.vertexData[24 + i] = v1;
+        batchDrawCall.vertexData[25 + i] = color.r;
+        batchDrawCall.vertexData[26 + i] = color.g;
+        batchDrawCall.vertexData[27 + i] = color.b;
+
+
+        batchDrawCall.instanceCount++;
+
+        if (batchDrawCall.instanceCount >= MAX_NUMBER_OF_SPRITES) {
+            const newBatchDrawCall = new BatchDrawCall(this.pipelinesPerTexture[texture.id]);
+            this.batchDrawCallPerTexture[texture.id].push(newBatchDrawCall);
+        }
+
+    }
+
 
     public frameEnd() {
 

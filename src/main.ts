@@ -1,11 +1,8 @@
 
-import { QuadGeometry } from "./geometry";
-import { Texture } from "./texture";
-import { BufferUtil } from "./buffer-util";
-import { Camera } from "./camera";
+import { vec2 } from "gl-matrix";
+import { Color } from "./color";
 import { Content } from "./content";
 import { Rect } from "./rect";
-import { SpritePipeline } from "./sprite-pipeline";
 import { SpriteRenderer } from "./sprite-renderer";
 
 class Renderer {
@@ -54,6 +51,8 @@ class Renderer {
     this.spriteRenderer.initialize();
   }
 
+  rotation = 0;
+
   public draw(): void {
 
 
@@ -76,6 +75,7 @@ class Renderer {
 
     // DRAW HERE
 
+    /*
     for (let i = 0; i < 20000; i++) {
       this.spriteRenderer.drawSprite(Content.playerTexture, new Rect(
         Math.random() * this.canvas.width,
@@ -88,6 +88,31 @@ class Renderer {
         Math.random() * this.canvas.height,
         10, 10));
     }
+    */
+    this.rotation += 0.01;
+
+    const playerSprite = Content.sprites["playerShip1_blue.png"];
+    playerSprite.drawRect.x += 0.7;
+    playerSprite.drawRect.y += 0.7;
+
+    this.spriteRenderer.drawSpriteSource(playerSprite.texture,
+      playerSprite.drawRect, playerSprite.sourceRect, undefined, this.rotation, vec2.fromValues(0.5, 0.5));
+
+    const shield = Content.sprites["shield1.png"];
+    shield.drawRect.x = playerSprite.drawRect.x - 13;
+    shield.drawRect.y = playerSprite.drawRect.y - 12;
+
+    this.spriteRenderer.drawSpriteSource(shield.texture,
+      shield.drawRect, shield.sourceRect, new Color(0,0,1), this.rotation, vec2.fromValues(0.5, 0.5));
+
+    const drawRect = new Rect(100, 100, 200, 200);
+
+    const halfWidth = Content.uvTexture.width / 2;
+    const halfHeight = Content.uvTexture.height / 2;
+    const sourceRect = new Rect(0, halfHeight, halfWidth, halfHeight);
+
+    this.spriteRenderer.drawSpriteSource(Content.uvTexture, drawRect, sourceRect, undefined, 
+      this.rotation, vec2.fromValues(0.5, 0.5));
 
     this.spriteRenderer.frameEnd();
 
@@ -98,7 +123,7 @@ class Renderer {
     window.requestAnimationFrame(() => this.draw());
   }
 
-  
+
 
 }
 
