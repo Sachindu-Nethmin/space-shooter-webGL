@@ -8,5 +8,4 @@ export class Rect
     {
         return new Rect(this.x, this.y, this.width, this.height);
     }
-
 }

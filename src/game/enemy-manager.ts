@@ -1,6 +1,10 @@
 import { SpriteRenderer } from "../sprite-renderer";
+import { BulletManager } from "./bullet-manager";
 import { Enemy } from "./enemy";
+import { ExplosionManager } from "./explosion-manager";
+import { HighScore } from "./high-score";
 import { MeteorEnemy } from "./meteor-enemy";
+import { Player } from "./player";
 
 const SPAWN_INTERVAL = 1000;
 
@@ -9,7 +13,12 @@ export class EnemyManager
     private timeToSpawn = 0;
     private pool : Enemy[] = [];
 
-    constructor(private gameWidth: number, private gameHeight: number) 
+    constructor(
+        private readonly player: Player,
+        private readonly explosionManager: ExplosionManager,
+        private readonly bulletManager: BulletManager,
+        private gameWidth: number, private gameHeight: number,
+        private highScore: HighScore) 
     {
     }
 
@@ -42,6 +51,22 @@ export class EnemyManager
             if(enemy.active)
             {
                 enemy.update(dt);
+
+                // enemy player collision
+                if(enemy.collider.intersects(this.player.collider))
+                {
+                    enemy.active = false;
+                    this.explosionManager.create(enemy.drawRect);
+                }
+
+                // enemy bullet collision
+                if(this.bulletManager.intersectsEnemy(enemy))
+                {
+                    enemy.active = false;
+                    this.explosionManager.create(enemy.drawRect);
+                    this.highScore.currentScore += 10;
+                }
+
 
                 if(enemy.drawRect.y > this.gameHeight)
                 {
