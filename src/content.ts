@@ -2,8 +2,8 @@ import { vec2 } from "gl-matrix";
 import { Quad } from "./quad";
 import { Rect } from "./rect";
 import { Sprite } from "./sprite";
-import { Texture } from "./texture";
 import { SpriteFont } from "./sprite-font";
+import { Texture } from "./texture";
 
 export class Content {
 
@@ -15,6 +15,7 @@ export class Content {
     public static spriteSheet: Texture;
     public static backgroundTexture: Texture;
     public static explosionTexture: Texture;
+    public static iceTexture: Texture;
 
     public static sprites: { [id: string]: Sprite } = {};
 
@@ -27,12 +28,15 @@ export class Content {
 
 
         this.explosionTexture = await Texture.createTextureFromURL(device, "assets/explosion.png");
+        this.iceTexture = await Texture.createTextureFromURL(device, "assets/ice03.jpg");
 
         this.backgroundTexture = await Texture.createTextureFromURL(device, "assets/Backgrounds/purple.png");
 
         await this.loadSpriteSheet();
 
-        this.spriteFont = await this.loadSnowBSpriteFont(device,"assets/SpriteFont.xml", "assets/SpriteFont.png");
+        this.spriteFont = await this.loadSnowBSpriteFont(device,
+             "assets/SpriteFont.xml",
+            "assets/SpriteFont.png");
     }
 
     private static async loadSpriteSheet() {
@@ -58,10 +62,12 @@ export class Content {
         });
     }
 
-    public static async loadSnowBSpriteFont(
+    private static async loadSnowBSpriteFont(
         device: GPUDevice,
         xmlPath: string,
-        texturePath: string): Promise<SpriteFont> {
+        texturePath: string,
+    ): Promise<SpriteFont> {
+
         const texture = await Texture.createTextureFromURL(device, texturePath);
 
         const xmlReq = await fetch(xmlPath);
@@ -77,13 +83,14 @@ export class Content {
         xmlDoc.querySelectorAll("char").forEach((char) => {
 
             const id = parseInt(char.getAttribute("id")!);
+
             const x = parseInt(char.getAttribute("x")!);
             const y = parseInt(char.getAttribute("y")!);
             const width = parseInt(char.getAttribute("width")!);
             const height = parseInt(char.getAttribute("height")!);
-            const advance = parseInt(char.getAttribute("xadvance")!);
             const xOffset = parseInt(char.getAttribute("xoffset")!);
             const yOffset = parseInt(char.getAttribute("yoffset")!);
+            const xAdvance = parseInt(char.getAttribute("xadvance")!);
 
             const x1 = x / texture.width;
             const y1 = y / texture.height;
@@ -94,17 +101,17 @@ export class Content {
                 vec2.fromValues(x1, y1),
                 vec2.fromValues(x2, y1),
                 vec2.fromValues(x2, y2),
-                vec2.fromValues(x1, y2)
-            )
+                vec2.fromValues(x1, y2),
+            );
 
             font.createChar(id,
                 quad,
                 vec2.fromValues(width, height),
-                advance,
+                xAdvance,
                 vec2.fromValues(xOffset, yOffset));
-
         });
 
         return font;
+
     }
 }
