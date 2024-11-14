@@ -4,15 +4,17 @@ import { Rect } from "../rect";
 import { SpriteRenderer } from "../sprite-renderer";
 import { Texture } from "../texture";
 import { InputManager } from "../input-manager";
+import { CircleCollider } from "../circle-collider";
 
 const PLAYER_SPEED = 0.25;
 
 export class Player 
 {
     private movementDirection = vec2.create();
-    private drawRect: Rect;
+    public readonly drawRect: Rect;
     private sourceRect: Rect;
     private texture: Texture; 
+    public collider = new CircleCollider();
 
     constructor(private inputManager: InputManager, 
         private gameWidth: number, 
@@ -75,6 +77,7 @@ export class Player
         this.drawRect.y += this.movementDirection[1] * PLAYER_SPEED * dt;
    
         this.clampToBounds();
+        this.collider.update(this.drawRect);
     }
 
     public draw(spriteRenderer: SpriteRenderer): void 
