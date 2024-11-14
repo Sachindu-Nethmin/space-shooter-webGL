@@ -4,6 +4,7 @@ import { BulletManager } from "./game/bullet-manager";
 import { EnemyManager } from "./game/enemy-manager";
 import { ExplosionManager } from "./game/explosion-manager";
 import { Player } from "./game/player";
+import { HighScore } from "./game/high-score";
 
 const engine = new Engine();
 engine.initialize().then(() => {
@@ -14,10 +15,12 @@ engine.initialize().then(() => {
     const background = new Background(engine.gameBounds[0], engine.gameBounds[1]);
     const explosionManager = new ExplosionManager();
     const bulletManager = new BulletManager(player);
+    const highScore = new HighScore();
     const enemyManager = new EnemyManager(player,
          explosionManager,
          bulletManager,
-         engine.gameBounds[0], engine.gameBounds[1]);
+         engine.gameBounds[0], engine.gameBounds[1],
+         highScore);
     
     engine.onUpdate = (dt: number) => {
         player.update(dt);
@@ -33,6 +36,7 @@ engine.initialize().then(() => {
         enemyManager.draw(engine.spriteRenderer);
         bulletManager.draw(engine.spriteRenderer);
         explosionManager.draw(engine.spriteRenderer);
+        highScore.draw(engine.spriteRenderer);
     };
 
 

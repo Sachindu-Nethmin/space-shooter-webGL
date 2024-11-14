@@ -2,6 +2,7 @@ import { SpriteRenderer } from "../sprite-renderer";
 import { BulletManager } from "./bullet-manager";
 import { Enemy } from "./enemy";
 import { ExplosionManager } from "./explosion-manager";
+import { HighScore } from "./high-score";
 import { MeteorEnemy } from "./meteor-enemy";
 import { Player } from "./player";
 
@@ -16,7 +17,8 @@ export class EnemyManager
         private readonly player: Player,
         private readonly explosionManager: ExplosionManager,
         private readonly bulletManager: BulletManager,
-        private gameWidth: number, private gameHeight: number) 
+        private gameWidth: number, private gameHeight: number,
+        private highScore: HighScore) 
     {
     }
 
@@ -62,6 +64,7 @@ export class EnemyManager
                 {
                     enemy.active = false;
                     this.explosionManager.create(enemy.drawRect);
+                    this.highScore.currentScore += 10;
                 }
 
 
