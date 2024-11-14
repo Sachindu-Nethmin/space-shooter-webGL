@@ -30,10 +30,31 @@ var texSampler: sampler;
 @group(1) @binding(1)
 var tex: texture_2d<f32>;
 
+struct FragmentOut 
+{
+    @location(0) color: vec4f,
+    @location(1) brightness: vec4f,
+}
+
+const brightnessThreshold: f32 = 0.4;
 
 @fragment
-fn fragmentMain(fragData: VertexOut ) -> @location(0) vec4f 
+fn fragmentMain(fragData: VertexOut ) -> FragmentOut
 {
     var textureColor = textureSample(tex, texSampler, fragData.texCoords);
-    return fragData.color * textureColor;
+
+    var out: FragmentOut;
+    out.color = textureColor;
+
+    var l = dot(textureColor.rgb, vec3f(0.299, 0.587, 0.114));
+    if(l > brightnessThreshold)
+    {
+        out.brightness = textureColor;
+    }
+    else
+    {
+        out.brightness = vec4f(0.0, 0.0, 0.0, textureColor.a);
+    }
+
+    return out;
 }

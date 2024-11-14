@@ -75,6 +75,21 @@ export class SpritePipeline
                     operation: "add"
                   }
                 }
+              },
+              {
+                format: navigator.gpu.getPreferredCanvasFormat(),
+                blend: {
+                  color: {
+                    srcFactor: "src-alpha",
+                    dstFactor: "one-minus-src-alpha",
+                    operation: "add"
+                  },
+                  alpha: {
+                    srcFactor: "one",
+                    dstFactor: "one-minus-src-alpha",
+                    operation: "add"
+                  }
+                }
               }
             ]
           };
