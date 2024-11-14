@@ -3,6 +3,8 @@ import { Content } from "./content";
 import { SpriteRenderer } from "./sprite-renderer";
 import { InputManager } from "./input-manager";
 import { vec2 } from "gl-matrix";
+import { EffectsFactory } from "./effects-factory";
+import { Texture } from "./texture";
 
 export class Engine {
 
@@ -15,13 +17,22 @@ export class Engine {
 
   public spriteRenderer!: SpriteRenderer;
   public inputManager!: InputManager;
+  public effectsFactory!: EffectsFactory;
   public gameBounds = vec2.create();
 
   public onUpdate: (dt: number) => void = () => { };
   public onDraw: () => void = () => { };
 
-  constructor() {
+  // if this is null, we are rendering to the screen
+  private destinationTexture: GPUTexture | null = null;
 
+  public setDestinationTexture(texture: GPUTexture): void {
+    this.destinationTexture = texture;
+  }
+
+  public getCanvasTexture() : GPUTexture
+  {
+    return this.context.getCurrentTexture();
   }
 
   public async initialize(): Promise<void> {
@@ -59,6 +70,7 @@ export class Engine {
     this.spriteRenderer.initialize();
 
     this.inputManager = new InputManager();
+    this.effectsFactory = new EffectsFactory(this.device, this.canvas.width, this.canvas.height);
   }
 
   public draw(): void {
@@ -71,13 +83,17 @@ export class Engine {
 
     const commandEncoder = this.device.createCommandEncoder();
 
+    const textureView = this.destinationTexture != null ? 
+      this.destinationTexture.createView() :
+      this.context.getCurrentTexture().createView();
+
     const renderPassDescriptor: GPURenderPassDescriptor = {
       colorAttachments: [
         {
           clearValue: { r: 0.8, g: 0.8, b: 0.8, a: 1.0 },
           loadOp: "clear",
           storeOp: "store",
-          view: this.context.getCurrentTexture().createView()
+          view: textureView
         }
       ]
     };

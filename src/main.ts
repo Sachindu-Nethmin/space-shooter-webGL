@@ -1,13 +1,16 @@
+import { vec2 } from "gl-matrix";
+import { Content } from "./content";
 import { Engine } from "./engine";
 import { Background } from "./game/background";
 import { BulletManager } from "./game/bullet-manager";
 import { EnemyManager } from "./game/enemy-manager";
 import { ExplosionManager } from "./game/explosion-manager";
 import { Player } from "./game/player";
+import { Color } from "./color";
 import { HighScore } from "./game/high-score";
 
 const engine = new Engine();
-engine.initialize().then(() => {
+engine.initialize().then( async () => {
 
     const player = new Player(engine.inputManager, 
         engine.gameBounds[0], engine.gameBounds[1] );
@@ -22,6 +25,8 @@ engine.initialize().then(() => {
          engine.gameBounds[0], engine.gameBounds[1],
          highScore);
     
+    const postProcessEffect = await engine.effectsFactory.createPostProcessEffect();
+
     engine.onUpdate = (dt: number) => {
         player.update(dt);
         background.update(dt);
@@ -31,13 +36,20 @@ engine.initialize().then(() => {
     };
 
     engine.onDraw = () => {
+
+        engine.setDestinationTexture(postProcessEffect.texture.texture);
+
         background.draw(engine.spriteRenderer);
         player.draw(engine.spriteRenderer);
         enemyManager.draw(engine.spriteRenderer);
         bulletManager.draw(engine.spriteRenderer);
         explosionManager.draw(engine.spriteRenderer);
+
         highScore.draw(engine.spriteRenderer);
+
+        postProcessEffect.draw(engine.getCanvasTexture().createView());
     };
+
 
 
     engine.draw()

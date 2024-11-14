@@ -35,6 +35,27 @@ export class Texture {
     }
 
     /**
+     * Creates an empty texture
+     */
+    public static async createEmptyTexture(
+        device: GPUDevice, width: number, height: number, 
+        format: GPUTextureFormat = "bgra8unorm"): Promise<Texture> {
+
+        const texture = device.createTexture({
+            size: { width: width, height: height },
+            format: format,
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
+        });
+
+        const sampler = device.createSampler({
+            magFilter: "nearest",
+            minFilter: "nearest",
+        });
+
+        return new Texture(texture, sampler, "", width, height);
+    }
+
+    /**
      * Load a texture from a URL
      * @param device 
      * @param url 
