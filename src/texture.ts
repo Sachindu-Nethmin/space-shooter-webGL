@@ -39,9 +39,10 @@ export class Texture {
      */
     public static async createEmptyTexture(
         device: GPUDevice, width: number, height: number, 
-        format: GPUTextureFormat = "bgra8unorm"): Promise<Texture> {
+        format: GPUTextureFormat = "bgra8unorm", label: string = ""): Promise<Texture> {
 
         const texture = device.createTexture({
+            label,
             size: { width: width, height: height },
             format: format,
             usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
@@ -52,7 +53,7 @@ export class Texture {
             minFilter: "nearest",
         });
 
-        return new Texture(texture, sampler, "", width, height);
+        return new Texture(texture, sampler, label, width, height);
     }
 
     /**

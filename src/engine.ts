@@ -24,9 +24,9 @@ export class Engine {
   public onDraw: () => void = () => { };
 
   // if this is null, we are rendering to the screen
-  private destinationTexture: GPUTexture | null = null;
+  private destinationTexture?: GPUTexture | null = null;
 
-  public setDestinationTexture(texture: GPUTexture): void {
+  public setDestinationTexture(texture?: GPUTexture): void {
     this.destinationTexture = texture;
   }
 

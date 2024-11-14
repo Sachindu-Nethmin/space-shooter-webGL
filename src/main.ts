@@ -10,30 +10,34 @@ import { Color } from "./color";
 import { HighScore } from "./game/high-score";
 
 const engine = new Engine();
-engine.initialize().then( async () => {
+engine.initialize().then(async () => {
 
-    const player = new Player(engine.inputManager, 
-        engine.gameBounds[0], engine.gameBounds[1] );
+    const player = new Player(engine.inputManager,
+        engine.gameBounds[0], engine.gameBounds[1]);
 
     const background = new Background(engine.gameBounds[0], engine.gameBounds[1]);
     const explosionManager = new ExplosionManager();
     const bulletManager = new BulletManager(player);
     const highScore = new HighScore();
     const enemyManager = new EnemyManager(player,
-         explosionManager,
-         bulletManager,
-         engine.gameBounds[0], engine.gameBounds[1],
-         highScore);
-    
-    const postProcessEffect = await engine.effectsFactory.createTextureEffect();
+        explosionManager,
+        bulletManager,
+        engine.gameBounds[0], engine.gameBounds[1],
+        highScore);
 
-    postProcessEffect.setCombineTexture(Content.iceTexture);
-    postProcessEffect.mixValue = 0.25;
+    const postProcessEffect = await engine.effectsFactory.createBlurEffect();
+        postProcessEffect.doHorizontalPass = true;
+        postProcessEffect.doVerticalPass = true;
 
-    document.getElementById("mix")?.addEventListener("input", (e) => {
-        const target = e.target as HTMLInputElement;
-        postProcessEffect.mixValue = parseFloat(target.value);
-    })
+    document.getElementById("horizontal")?.addEventListener("click", (e) => {
+        postProcessEffect.doHorizontalPass = !postProcessEffect.doHorizontalPass;
+        (e.target as HTMLInputElement).checked = postProcessEffect.doHorizontalPass;
+    });
+
+    document.getElementById("vertical")?.addEventListener("click", (e) => {
+        postProcessEffect.doVerticalPass = !postProcessEffect.doVerticalPass;
+        (e.target as HTMLInputElement).checked = postProcessEffect.doVerticalPass;
+    });
 
     engine.onUpdate = (dt: number) => {
         player.update(dt);
@@ -45,8 +49,12 @@ engine.initialize().then( async () => {
 
     engine.onDraw = () => {
 
-        engine.setDestinationTexture(postProcessEffect.screenTexture.texture);
-
+        if (postProcessEffect.getRenderTexture()) {
+            engine.setDestinationTexture(postProcessEffect.getRenderTexture()!.texture);
+        }
+        else {
+            engine.setDestinationTexture(null);
+        }
         background.draw(engine.spriteRenderer);
         player.draw(engine.spriteRenderer);
         enemyManager.draw(engine.spriteRenderer);
@@ -55,7 +63,9 @@ engine.initialize().then( async () => {
 
         highScore.draw(engine.spriteRenderer);
 
-        postProcessEffect.draw(engine.getCanvasTexture().createView());
+        if (postProcessEffect.getRenderTexture()) {
+            postProcessEffect.draw(engine.getCanvasTexture().createView());
+        }
     };
 
 
