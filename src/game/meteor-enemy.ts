@@ -40,11 +40,13 @@ export class MeteorEnemy implements Enemy {
 
     constructor(private gameWidth: number, private gameHeight: number) {
         const key = METEOR_KEYS[Math.floor(Math.random() * METEOR_KEYS.length)];
-
+        
         const meteorSprite = Content.sprites[key];
         this.texture = meteorSprite.texture;
         this.sourceRect = meteorSprite.sourceRect.copy();
         this.drawRect = meteorSprite.drawRect.copy();
+        this.drawRect.y = -this.drawRect.height;
+        this.drawRect.x = Math.random() * (this.gameWidth - this.drawRect.width);
 
         this.speed = Math.random() * (METEOR_MAX_SPEED - METEOR_MIN_SPEED) + METEOR_MIN_SPEED;
         this.rotationSpeed = (Math.random() - 0.5) * 0.005;
@@ -53,6 +55,10 @@ export class MeteorEnemy implements Enemy {
     public update(dt: number) {
         this.drawRect.y += this.speed * dt;
         this.rotation += this.rotationSpeed * dt;
+
+        if (this.drawRect.y > this.gameHeight) {
+            this.active = false;
+        }
 
         this.collider.update(this.drawRect);
     }
