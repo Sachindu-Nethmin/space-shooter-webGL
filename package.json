@@ -1,3 +1,4 @@
+
 {
   "name": "space-shooter",
   "private": true,
@@ -18,3 +19,4 @@
     "vite": "^4.3.2"
   }
 }
+
